@@ -15,16 +15,15 @@
 
 .. class:: center
 
-    :Название исследуемой задачи: Мое название работы
-    :Тип научной работы: M1P/НИР/CoIS
-    :Автор: Имя Отчество Фамилия
-    :Научный руководитель: степень, Фамилия Имя Отчество
-    :Научный консультант(при наличии): степень, Фамилия Имя Отчество
+    :Название исследуемой задачи: Диагностика деменции на ранних этапах медицинских профиктических исследованиях
+    :Тип научной работы: НИР
+    :Автор: Дмитрий Сергеевич Слободин
+    :Научный руководитель: д.ф.-м.н., профессор Сенько Олег Валентинович
 
 Abstract
 ========
 
-Purus sit amet luctus venenatis lectus magna fringilla. Condimentum id venenatis a condimentum vitae sapien. Auctor neque vitae tempus quam pellentesque nec nam aliquam. Eget egestas purus viverra accumsan in. Nam aliquam sem et tortor. Donec et odio pellentesque diam volutpat commodo. Odio pellentesque diam volutpat commodo sed egestas. Sit amet dictum sit amet justo. Pellentesque sit amet porttitor eget. Imperdiet sed euismod nisi porta lorem mollis aliquam ut. Quis varius quam quisque id diam vel quam elementum. Ornare lectus sit amet est placerat in. Vulputate dignissim suspendisse in est ante. Elit sed vulputate mi sit amet mauris. Egestas sed tempus urna et pharetra pharetra. Viverra tellus in hac habitasse platea dictumst vestibulum rhoncus.
+This study investigates early dementia detection through computational analysis of audio recordings from standardized text reading tasks. Dementia affects speech production in measurable ways, but current clinical methods lack objective quantification tools for early screening. The research addresses the need for automated, scalable assessment methods. We propose a machine learning framework based on traditional algorithms that extracts acoustic and prosodic features from voice recordings. The approach utilizes statistical pattern recognition without neural networks. The expected outcome is a validated classification model that can distinguish between healthy individuals and those with early-stage dementia using simple voice recordings. This could enable accessible preliminary screening in primary care settings.
 
 Research publications
 ===============================
