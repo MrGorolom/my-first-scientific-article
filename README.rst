@@ -23,7 +23,7 @@
 Abstract
 ========
 
-This study investigates early dementia detection through computational analysis of audio recordings from standardized text reading tasks. Dementia affects speech production in measurable ways, but current clinical methods lack objective quantification tools for early screening. The research addresses the need for automated, scalable assessment methods. We propose a machine learning framework based on traditional algorithms that extracts acoustic and prosodic features from voice recordings. The approach utilizes statistical pattern recognition without neural networks. The expected outcome is a validated classification model that can distinguish between healthy individuals and those with early-stage dementia using simple voice recordings. This could enable accessible preliminary screening in primary care settings.
+This study investigates early dementia detection through computational analysis of audio recordings from standardized text reading tasks. Dementia affects speech production in measurable ways, but current clinical methods lack objective quantification tools for early screening. The research addresses the need for automated, scalable assessment methods. We propose a machine learning framework based on traditional algorithms that extracts acoustic and prosodic features from voice recordings. The approach utilizes statistical pattern recognition without neural networks. The expected outcome is a validated classification model that can distinguish between healthy individuals and those with early-stage deme  ntia using simple voice recordings. This could enable accessible preliminary screening in primary care settings.
 
 Research publications
 ===============================
