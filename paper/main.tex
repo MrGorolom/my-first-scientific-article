@@ -1,52 +1,36 @@
 \documentclass{article}
 \usepackage{arxiv}
 
+\documentclass{article}
+\usepackage{arxiv}
+
 \usepackage[utf8]{inputenc}
-\usepackage[english, russian]{babel}
+\usepackage[english,russian]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsfonts}
 \usepackage{nicefrac}
 \usepackage{microtype}
-\usepackage{lipsum}
 \usepackage{graphicx}
-\usepackage{natbib}
-\usepackage{doi}
+\usepackage[hidelinks]{hyperref}
+\usepackage[round,authoryear]{natbib}
 
 
+\title{Diagnosis of dementia in the early stages of medical preventive research}
 
-\title{A template for the \emph{arxiv} style}
-
-\author{ David S.~Hippocampus\thanks{Use footnote for providing further
-		information about author (webpage, alternative
-		address)---\emph{not} for acknowledging funding agencies.} \\
-	Department of Computer Science\\
-	Cranberry-Lemon University\\
-	Pittsburgh, PA 15213 \\
-	\texttt{hippo@cs.cranberry-lemon.edu} \\
-	%% examples of more authors
-	\And
-	Elias D.~Striatum \\
-	Department of Electrical Engineering\\
-	Mount-Sheikh University\\
-	Santa Narimana, Levand \\
-	\texttt{stariate@ee.mount-sheikh.edu} \\
-	%% \AND
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
-	%% \And
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
-	%% \And
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
+\author{
+    Dmitry S.Slobodin\thanks{Student Research Project (NIR).}\\
+    Computational Mathematics and Cybernetics\\
+    Lomonosov Moscow State University\\
+    Moscow, Russia\\
+    \texttt{email@domain}\\
+    \And
+    Oleg V.Senko\thanks{Supervisor; DSc (Phys.–Math.), Professor.}\\
+    Computational Mathematics and Cybernetics\\
+    Lomonosov Moscow State University\\
+    Moscow, Russia\\
+    \texttt{email@domain}\\
 }
 \date{}
 
@@ -66,16 +50,44 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-	\lipsum[1]
+This study investigates early dementia detection through computational analysis of audio recordings from standardized text reading tasks. Dementia affects speech production in measurable ways, but current clinical methods lack objective quantification tools for early screening. The research addresses the need for automated, scalable assessment methods. We propose a machine learning framework based on traditional algorithms that extracts acoustic and prosodic features from voice recordings. The approach utilizes statistical pattern recognition without neural networks. The expected outcome is a validated classification model that can distinguish between healthy individuals and those with early-stage deme ntia using simple voice recordings. This could enable accessible preliminary screening in primary care settings.
 \end{abstract}
 
 
-\keywords{First keyword \and Second keyword \and More}
+\keywords{Early dementia detection \and Speech-based screening \and Standardized reading task}
 
 \section{Introduction}
-\lipsum[2]
-\lipsum[3]
+Dementia screening requires tools that are fast, low-cost, and deployable in everyday clinics where non-specialists see patients first. Speech offers a noninvasive digital biomarker that can be captured in minutes with ubiquitous hardware, enabling a triage workflow: flag suspicious cases during a routine visit and refer them to specialists for definitive assessment. Earlier detection improves care planning, supports timely interventions, and can reduce downstream healthcare costs, while remote collection enables longitudinal monitoring between visits.
 
+Prior research predominantly analyzes spontaneous speech tasks such as picture description or interviews, combining acoustic–prosodic features (e.g., eGeMAPS/ComParE, MFCCs, pause and tempo statistics, F0 variability) with linguistic features extracted from ASR transcripts (lexical richness, syntactic complexity, semantic coherence, and disfluencies) \citep{adress2020,adresso2021,review2020,fraser2016,karlekar2018,warnita2018,gemaps2015}. Challenge datasets that control for confounders (e.g., ADReSS/ADReSSo) report around 75–80% accuracy for Alzheimer’s vs. control classification and moderate error for MMSE regression, with the strongest systems fusing acoustic and linguistic information \citep{adress2020,adresso2021}. Neural models on log-mel/MFCC inputs and self-supervised speech embeddings (wav2vec 2.0, HuBERT) often outperform hand-crafted features on small datasets, while pause/tempo cues remain robust, interpretable markers \citep{ssl_alzheimers,hubert2021}. Longitudinal work indicates that speech rate, articulation rate, pause distributions, and F0 dynamics track cognitive decline over time \citep{longitudinal2017}. These findings motivate clinically scalable screening via short speech tasks.
+
+However, spontaneous speech poses several challenges that limit clinical translation. High linguistic variability and topic effects can lead models to learn content rather than cognitive markers, reducing cross-domain and cross-language generalization \citep{review2020,adress2020}. Expert-labeled corpora are small, and imperfect validation (e.g., speaker leakage) inflates reported performance; dependence on ASR quality introduces variable noise by accent, recording, and pathology, precisely where robust signals are needed \citep{review2020,adresso2021}. Channel and demographic confounders (age, sex, microphone) can further bias results if not explicitly controlled, and calibration and interpretability are often underreported \citep{adress2020,adresso2021,review2020}.
+
+We address these issues with a standardized protocol: every participant reads the same short literary passage aloud under routine clinical conditions. Fixing the lexical and syntactic content reduces variability and ASR dependence, allowing measurement of acoustic–prosodic, timing, and pronunciation markers that more directly reflect motor–cognitive control. We align audio to the canonical text via forced alignment to compute precise word/phoneme durations, speech versus articulation rate, silent and filled pause statistics and their positions, distributions of vowel/consonant durations (including VOT), as well as jitter/shimmer and F0 dynamics; we complement these interpretable features with self-supervised speech embeddings (wav2vec 2.0, HuBERT) and robust baselines such as eGeMAPS \citep{gemaps2015,mfa,ssl_alzheimers}. Models include lightweight classifiers and regressors (Logistic Regression, SVM, XGBoost, MLP), with late fusion across modalities and multitask heads for both dementia detection and severity estimation (ordinal classification and/or MMSE regression), trained with strict speaker-held-out splits, stratified by age/sex and channel, plus optional domain-adversarial regularization.
+
+Our contributions are as follows.
+\begin{itemize}
+\item Data and protocol: we study a labeled dataset of read-speech recordings where all participants read the same passage; we release a reproducible pipeline for acquisition, quality control, and forced alignment, enabling site-to-site comparability.
+\item Features and models: we introduce an interpretable set of reading-specific acoustic and timing biomarkers (pause-rate and distributions, speech and articulation rate, position-sensitive pauses, word- and phoneme-level durations, VOT, jitter/shimmer, F0 variability) and fuse them with self-supervised embeddings and eGeMAPS baselines.
+\item Validation and robustness: we provide speaker-held-out evaluation with balanced folds and report balanced accuracy, AUC, macro-F1 for classification and MAE/RMSE/Spearman for severity, alongside calibration (ECE), ablations, and robustness tests to realistic noise and channel shifts.
+\item Empirical findings: alignment-derived timing/pause features consistently rank among the top predictors and, when fused with SSL embeddings, outperform single-modality systems while yielding more interpretable links to clinical constructs such as processing speed and motor speech control.
+\item Practical impact: the protocol is short, inexpensive, and feasible for non-specialists, supporting triage during routine visits and remote monitoring; by reducing linguistic variability, it improves generalization and makes speech-based screening more clinically actionable.
+\end{itemize}
+
+\section{Related Work}
+A large body of research has investigated speech as a biomarker for cognitive impairment, with a dominant focus on spontaneous speech tasks. Community challenges ADReSS and ADReSSo curated balanced subsets of DementiaBank, controlling for age, sex, and recording channel, and established rigorous speaker-held-out evaluations \citep{adress2020,adresso2021}. Systems in these challenges typically fused acoustic–prosodic features (eGeMAPS/ComParE, MFCCs, pitch and energy statistics, pause and tempo measures) with linguistic features obtained from ASR, such as lexical diversity, syntactic complexity, semantic coherence, and disfluency counts, achieving about 75–80% accuracy for Alzheimer’s vs. control and moderate error for MMSE regression \citep{adress2020,adresso2021}. These results highlighted that temporal structure—speech rate, articulation rate, and pause distributions—carries strong signal for dementia detection.
+
+Hand-crafted acoustic feature sets have served as robust baselines across paralinguistic tasks. The Geneva Minimalistic Acoustic Parameter Set (eGeMAPS) was designed for physiological interpretability and low overfitting risk and has repeatedly delivered strong performance in health and affective computing \citep{gemaps2015}. Beyond low-level descriptors, research has emphasized prosodic and timing markers: ratio and distribution of silence, inter-word pauses, maximum pause length, variability of F0, jitter and shimmer, and stability of articulation rate \citep{review2020,longitudinal2017}. Such features are particularly attractive in clinical contexts due to interpretability and hardware robustness.
+
+Linguistic approaches exploit the idea that neurodegeneration affects lexical access, syntactic planning, and semantic coherence. Classical models employ hundreds of features spanning type–token ratios, part-of-speech patterns, parse-tree depth, and discourse measures \citep{fraser2016}. Neural NLP architectures (CNN/LSTM/Transformers) trained on transcripts have matched or surpassed feature-engineered baselines, while interpretation studies point to simplified syntax, increased repetitions, and self-repairs as discriminative cues \citep{karlekar2018}. However, transcript-based methods hinge on ASR quality, which varies with accent, noise, and pathology; this dependency limits portability across settings and languages \citep{review2020}.
+
+End-to-end acoustic models and self-supervised speech representations have gained traction for low-resource medical audio. CNN/LSTM architectures on log-mel or MFCC inputs demonstrated competitive accuracy on DementiaBank \citep{warnita2018}. More recently, self-supervised models like wav2vec 2.0 and HuBERT provide powerful embeddings that improve over traditional features and mitigate data scarcity, especially when paired with simple classifiers and strong regularization \citep{ssl_alzheimers,hubert2021}. Nonetheless, their black-box nature complicates clinical interpretation, and domain shifts (microphone, room acoustics) still degrade performance without explicit adaptation.
+
+Clinical realism motivates studies beyond picture description, including dialogues in memory clinics, telephone calls, and multilingual corpora. Work on real-world clinical conversations has shown that turn-taking behavior, response latency, and dialogue-level timing offer discriminative signals, with moderate-to-high AUCs under realistic noise and topic variability \citep{mirheidari2019}. Cross-language studies report that pause structure and articulation-related markers are relatively language-agnostic compared to lexical features, but strict speaker-held-out splits and confound control are essential for reliable estimates \citep{gosztolya2019,review2020}. Across this literature, common limitations include small labeled datasets, potential leakage between training and test speakers or sessions, and underreporting of calibration and robustness analyses.
+
+Standardized speech tasks have a long clinical tradition. Verbal fluency tests quantify clustering and switching behavior and predict outcomes in MCI, linking detailed temporal patterns to brain structure \citep{fluency2016}. Reading aloud provides a complementary standardized probe: by fixing the lexical and syntactic content, it isolates motor–prosodic and planning components of speech production while enabling precise measurement through forced alignment \citep{mfa}. Despite its practicality for non-specialist triage, reading has received less attention than spontaneous speech in automated pipelines. Prior work suggests that alignment-based timing measures (word/phoneme durations, pause positions, vowel and stop consonant timing, VOT) and prosodic stability (F0 dynamics, jitter, shimmer) are sensitive to cognitive decline, and their interpretability facilitates clinician trust \citep{review2020,longitudinal2017}.
+
+Our study builds on these insights and targets standardized reading of the same passage for every participant. By reducing linguistic variability and ASR dependence, we focus on physiologically grounded markers and improve portability across domains and languages. We combine interpretable alignment-derived timing/prosodic features with self-supervised speech embeddings and robust baselines (eGeMAPS), and we adopt strict speaker-held-out validation with confound-balanced folds, calibration reporting, and ablation studies. This design aims to close the gap between research-grade accuracy and clinically deployable, reproducible screening suitable for routine triage and remote monitoring.
 \section{Headings: first level}
 \label{sec:headings}
 
@@ -154,5 +166,5 @@ The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
-
+\printbibliography
 \end{document}
