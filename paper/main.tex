@@ -88,22 +88,45 @@ Clinical realism motivates studies beyond picture description, including dialogu
 Standardized speech tasks have a long clinical tradition. Verbal fluency tests quantify clustering and switching behavior and predict outcomes in MCI, linking detailed temporal patterns to brain structure \citep{fluency2016}. Reading aloud provides a complementary standardized probe: by fixing the lexical and syntactic content, it isolates motor–prosodic and planning components of speech production while enabling precise measurement through forced alignment \citep{mfa}. Despite its practicality for non-specialist triage, reading has received less attention than spontaneous speech in automated pipelines. Prior work suggests that alignment-based timing measures (word/phoneme durations, pause positions, vowel and stop consonant timing, VOT) and prosodic stability (F0 dynamics, jitter, shimmer) are sensitive to cognitive decline, and their interpretability facilitates clinician trust \citep{review2020,longitudinal2017}.
 
 Our study builds on these insights and targets standardized reading of the same passage for every participant. By reducing linguistic variability and ASR dependence, we focus on physiologically grounded markers and improve portability across domains and languages. We combine interpretable alignment-derived timing/prosodic features with self-supervised speech embeddings and robust baselines (eGeMAPS), and we adopt strict speaker-held-out validation with confound-balanced folds, calibration reporting, and ablation studies. This design aims to close the gap between research-grade accuracy and clinically deployable, reproducible screening suitable for routine triage and remote monitoring.
-\section{Headings: first level}
-\label{sec:headings}
 
-\lipsum[4] See Section \ref{sec:headings}.
 
-\subsection{Headings: second level}
-\lipsum[5]
-\begin{equation}
-	\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
-\end{equation}
+\section{Problem Formulation and Method}
+We study early dementia assessment from audio recordings of a standardized reading task in a regression setting: the model predicts a clinically validated dementia severity score (e.g., MMSE or CDR/CDR-SB), enabling both continuous monitoring and optional threshold-based screening in primary care. Let the dataset be
+$$
+\mathcal{D}=\{(x_i,y_i,c_i)\}_{i=1}^n,
+$$
+where $x_i$ is the waveform of participant $i$ reading the same canonical passage, $y_i\in\mathbb{R}$ is the target dementia score, and $c_i$ are observed confounders (age, sex, device, room). We assume speaker-level independence and a joint distribution $P(X,Y,C)$; evaluation uses speaker-disjoint splits. We construct a feature mapping $\Phi$ that fuses acoustic–prosodic and alignment-derived timing cues: low-level descriptors (e.g., eGeMAPS \citep{gemaps2015}) and forced-alignment features to the canonical text (word/phoneme durations, pause structure) via Montreal Forced Aligner \citep{mfa}. The per-recording feature vector is
+$$
+z_i=\Phi(x_i)\doteq A\!\Big(\Phi_{\text{LLD}}(x_i),\ \Phi_{\text{ali}}(x_i)\Big)\in\mathbb{R}^p,
+$$
+where $A$ aggregates frame-/token-level statistics (means, quantiles, variances). The prediction function is
+$$
+f = h\circ \Phi:\ \mathcal{X}\to\mathbb{R},
+$$
+with $h$ a classical regressor (ridge, gradient boosting). External quality focuses on the coefficient of determination $R^2$ and mean absolute error (MAE). We report speaker-held-out estimates of $R^2$ and MAE; note that
+$$
+R^2\ =\ 1 - \frac{\sum_{i}(y_i-\hat{y}_i)^2}{\sum_{i}(y_i-\bar{y})^2},\qquad
+\text{MAE}\ =\ \frac{1}{n}\sum_{i}|y_i-\hat{y}_i|,
+$$
+so higher $R^2$ (up to 1) and lower MAE indicate better performance; negative $R^2$ implies the model underperforms the mean predictor. The empirical risk minimized during training is the mean squared error (MSE) with regularization and class/sample weights if needed:
+$$
+\min_{\theta}\ \frac{1}{n}\sum_{i=1}^n w_i\big(h_\theta(z_i)-y_i\big)^2\ +\ \lambda\,\Omega(\theta).
+$$
 
-\subsubsection{Headings: third level}
-\lipsum[6]
+Gradient boosting for regression is our primary model class due to strong accuracy on tabular features and small-to-medium datasets. Boosting builds an additive ensemble of weak learners (typically shallow regression trees) by fitting each new learner to the negative gradient (residuals) of the current loss. After $m$ iterations the model has the form
+$$
+F_m(x)\ =\ F_{m-1}(x)\ +\ \nu\,\gamma_m\,h_m(x),
+$$
+where $h_m$ is a weak learner fitted to residuals from $F_{m-1}$, $\nu\in(0,1]$ is the learning rate, and $\gamma_m$ is the optimal step for the chosen loss (MSE here). Practical implementations (XGBoost/LightGBM/CatBoost) control capacity via tree depth, number of estimators, L1/L2 penalties, subsampling ($\texttt{subsample}$, $\texttt{colsample\_bytree}$), and early stopping. For robustness and interpretability we also train a ridge baseline; ablations compare eGeMAPS-only, alignment-only, and fused features.
 
-\paragraph{Paragraph}
-\lipsum[7]
+Pipeline details:
+- Preprocessing: level normalization; voice activity detection to preserve true pauses; optional denoising; forced alignment to obtain word/phoneme boundaries and alignment scores.  
+- Features: eGeMAPS (energy, F0, spectral slopes, jitter, shimmer) \citep{gemaps2015}; timing/pronunciation from alignment (silence ratio, pause rate and duration distributions, maximum pause, speech vs. articulation rate, word/phoneme duration statistics, vowel/consonant duration dispersion, VOT for stops, position-sensitive pauses, self-repetitions/self-corrections as deviations from the script). All features are standardized (z-score) on the training folds.  
+- Training and model selection: speaker-disjoint k-fold CV stratified by age/sex/device; tuning grids for boosting (e.g., $\texttt{n\_estimators}\in\{200,400,800\}$, $\texttt{learning\_rate}\in\{0.01,0.05,0.1\}$, $\texttt{max\_depth}\in\{2,3,4\}$, $\texttt{subsample}\in\{0.6,0.8,1.0\}$, $\texttt{colsample\_bytree}\in\{0.6,0.8,1.0\}$, $\texttt{reg\_alpha},\texttt{reg\_lambda}\in\{0,10^{-3},10^{-2},10^{-1}\}$) with early stopping on validation $R^2$.  
+- Evaluation: report mean±std for $R^2$ (primary) and MAE (secondary) across folds; provide scatter plots of predicted vs. observed scores and calibration diagnostics. For optional screening, convert predictions to a binary flag using a clinically meaningful cut-off on $y$ and report balanced accuracy/AUC on the derived task \citep{adress2020,adresso2021}.  
+- Interpretability and robustness: feature importances (gain/SHAP) to highlight dominant biomarkers (e.g., increased pause density, reduced articulation rate); stress tests with noise/reverberation; sensitivity to recording channel; ablations to quantify the contribution of alignment-based timing features.
+
+This single-section formulation specifies the data structure, the mapping $f=h\circ\Phi$, the external quality criteria (with $R^2$ emphasized and MAE as complementary), and an optimization problem solved by gradient boosting regression under MSE. The standardized reading protocol reduces linguistic variability and ASR dependence, while boosting on fused acoustic–timing features provides a strong, non-neural baseline that is portable, interpretable, and suitable for primary-care deployment.
 
 
 
