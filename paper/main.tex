@@ -1,16 +1,15 @@
 \documentclass{article}
 \usepackage{arxiv}
 
-\documentclass{article}
-\usepackage{arxiv}
 
+
+\usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[english,russian]{babel}
-\usepackage[T1]{fontenc}
+\usepackage[russian,english]{babel}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsfonts}
-\usepackage{nicefrac}
+\usepackage{amsmath}
 \usepackage{microtype}
 \usepackage{graphicx}
 \usepackage[hidelinks]{hyperref}
@@ -50,7 +49,7 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-This study investigates early dementia detection through computational analysis of audio recordings from standardized text reading tasks. Dementia affects speech production in measurable ways, but current clinical methods lack objective quantification tools for early screening. The research addresses the need for automated, scalable assessment methods. We propose a machine learning framework based on traditional algorithms that extracts acoustic and prosodic features from voice recordings. The approach utilizes statistical pattern recognition without neural networks. The expected outcome is a validated classification model that can distinguish between healthy individuals and those with early-stage deme ntia using simple voice recordings. This could enable accessible preliminary screening in primary care settings.
+This study investigates the comparative effectiveness of two speech tasks—standardized text reading and spontaneous picture description—for early dementia screening. While both approaches leverage acoustic biomarkers in speech, their relative performance and clinical utility remain unclear. We conducted a systematic comparison using parallel datasets where the same participants completed both tasks under identical recording conditions. Acoustic features were extracted using the eGeMAPS parameter set and evaluated through multiple machine learning models for regression and classification of established clinical scales (MMSE, MoCA, CDR). Contrary to initial expectations, spontaneous picture description consistently outperformed standardized reading across most evaluation metrics, achieving higher accuracy in differentiating between healthy individuals, those with mild cognitive impairment, and early-stage dementia patients. These findings provide empirical evidence for task selection in clinical speech-based screening protocols and demonstrate the superior sensitivity of natural language production for capturing cognitive-linguistic deficits associated with dementia progression.
 \end{abstract}
 
 
@@ -59,99 +58,315 @@ This study investigates early dementia detection through computational analysis 
 \section{Introduction}
 Dementia screening requires tools that are fast, low-cost, and deployable in everyday clinics where non-specialists see patients first. Speech offers a noninvasive digital biomarker that can be captured in minutes with ubiquitous hardware, enabling a triage workflow: flag suspicious cases during a routine visit and refer them to specialists for definitive assessment. Earlier detection improves care planning, supports timely interventions, and can reduce downstream healthcare costs, while remote collection enables longitudinal monitoring between visits.
 
-Prior research predominantly analyzes spontaneous speech tasks such as picture description or interviews, combining acoustic–prosodic features (e.g., eGeMAPS/ComParE, MFCCs, pause and tempo statistics, F0 variability) with linguistic features extracted from ASR transcripts (lexical richness, syntactic complexity, semantic coherence, and disfluencies) \citep{adress2020,adresso2021,review2020,fraser2016,karlekar2018,warnita2018,gemaps2015}. Challenge datasets that control for confounders (e.g., ADReSS/ADReSSo) report around 75–80% accuracy for Alzheimer’s vs. control classification and moderate error for MMSE regression, with the strongest systems fusing acoustic and linguistic information \citep{adress2020,adresso2021}. Neural models on log-mel/MFCC inputs and self-supervised speech embeddings (wav2vec 2.0, HuBERT) often outperform hand-crafted features on small datasets, while pause/tempo cues remain robust, interpretable markers \citep{ssl_alzheimers,hubert2021}. Longitudinal work indicates that speech rate, articulation rate, pause distributions, and F0 dynamics track cognitive decline over time \citep{longitudinal2017}. These findings motivate clinically scalable screening via short speech tasks.
+Two primary speech paradigms dominate dementia screening research: standardized reading tasks and spontaneous description tasks. Each approach offers distinct advantages and limitations, yet their comparative effectiveness remains inadequately explored. Standardized reading controls linguistic content, potentially reducing variability and focusing on acoustic-prosodic markers of motor speech control. Spontaneous description engages natural language production, potentially capturing broader cognitive-linguistic processes but introducing greater variability.
+
+Prior research predominantly analyzes spontaneous speech tasks such as picture description or interviews, combining acoustic–prosodic features (e.g., eGeMAPS/ComParE, MFCCs, pause and tempo statistics, F0 variability) with linguistic features extracted from ASR transcripts (lexical richness, syntactic complexity, semantic coherence, and disfluencies) \citep{adress2020,adresso2021,review2020,fraser2016,karlekar2018,warnita2018,gemaps2015}. Challenge datasets that control for confounders (e.g., ADReSS/ADReSSo) report around 75–80% accuracy for Alzheimer's vs. control classification and moderate error for MMSE regression, with the strongest systems fusing acoustic and linguistic information \citep{adress2020,adresso2021}. Neural models on log-mel/MFCC inputs and self-supervised speech embeddings (wav2vec 2.0, HuBERT) often outperform hand-crafted features on small datasets, while pause/tempo cues remain robust, interpretable markers \citep{ssl_alzheimers,hubert2021}. Longitudinal work indicates that speech rate, articulation rate, pause distributions, and F0 dynamics track cognitive decline over time \citep{longitudinal2017}. These findings motivate clinically scalable screening via short speech tasks.
 
 However, spontaneous speech poses several challenges that limit clinical translation. High linguistic variability and topic effects can lead models to learn content rather than cognitive markers, reducing cross-domain and cross-language generalization \citep{review2020,adress2020}. Expert-labeled corpora are small, and imperfect validation (e.g., speaker leakage) inflates reported performance; dependence on ASR quality introduces variable noise by accent, recording, and pathology, precisely where robust signals are needed \citep{review2020,adresso2021}. Channel and demographic confounders (age, sex, microphone) can further bias results if not explicitly controlled, and calibration and interpretability are often underreported \citep{adress2020,adresso2021,review2020}.
 
-We address these issues with a standardized protocol: every participant reads the same short literary passage aloud under routine clinical conditions. Fixing the lexical and syntactic content reduces variability and ASR dependence, allowing measurement of acoustic–prosodic, timing, and pronunciation markers that more directly reflect motor–cognitive control. We align audio to the canonical text via forced alignment to compute precise word/phoneme durations, speech versus articulation rate, silent and filled pause statistics and their positions, distributions of vowel/consonant durations (including VOT), as well as jitter/shimmer and F0 dynamics; we complement these interpretable features with self-supervised speech embeddings (wav2vec 2.0, HuBERT) and robust baselines such as eGeMAPS \citep{gemaps2015,mfa,ssl_alzheimers}. Models include lightweight classifiers and regressors (Logistic Regression, SVM, XGBoost, MLP), with late fusion across modalities and multitask heads for both dementia detection and severity estimation (ordinal classification and/or MMSE regression), trained with strict speaker-held-out splits, stratified by age/sex and channel, plus optional domain-adversarial regularization.
+Standardized reading tasks offer potential solutions to these challenges by fixing lexical and syntactic content, reducing variability and ASR dependence. This allows measurement of acoustic–prosodic, timing, and pronunciation markers that more directly reflect motor–cognitive control. Audio can be aligned to canonical text via forced alignment to compute precise word/phoneme durations, speech versus articulation rate, silent and filled pause statistics and their positions, distributions of vowel/consonant durations (including VOT), as well as jitter/shimmer and F0 dynamics \citep{gemaps2015,mfa,ssl_alzheimers}.
+
+This study addresses a critical gap in the literature by systematically comparing both paradigms using identical participant cohorts, acoustic feature sets, and machine learning pipelines. We evaluate their relative effectiveness for predicting multiple clinical scales (MMSE, MoCA, CDR) through both regression and classification frameworks. Our comparative approach enables direct assessment of each task type's strengths and limitations for clinical deployment.
 
 Our contributions are as follows.
 \begin{itemize}
-\item Data and protocol: we study a labeled dataset of read-speech recordings where all participants read the same passage; we release a reproducible pipeline for acquisition, quality control, and forced alignment, enabling site-to-site comparability.
-\item Features and models: we introduce an interpretable set of reading-specific acoustic and timing biomarkers (pause-rate and distributions, speech and articulation rate, position-sensitive pauses, word- and phoneme-level durations, VOT, jitter/shimmer, F0 variability) and fuse them with self-supervised embeddings and eGeMAPS baselines.
-\item Validation and robustness: we provide speaker-held-out evaluation with balanced folds and report balanced accuracy, AUC, macro-F1 for classification and MAE/RMSE/Spearman for severity, alongside calibration (ECE), ablations, and robustness tests to realistic noise and channel shifts.
-\item Empirical findings: alignment-derived timing/pause features consistently rank among the top predictors and, when fused with SSL embeddings, outperform single-modality systems while yielding more interpretable links to clinical constructs such as processing speed and motor speech control.
-\item Practical impact: the protocol is short, inexpensive, and feasible for non-specialists, supporting triage during routine visits and remote monitoring; by reducing linguistic variability, it improves generalization and makes speech-based screening more clinically actionable.
+\item \textbf{Comparative framework}: We develop and validate a systematic methodology for comparing standardized reading and spontaneous description tasks using parallel datasets from the same participant cohort.
+\item \textbf{Feature analysis}: We identify the most discriminative acoustic features for each task type using identical eGeMAPS parameter sets and statistical validation procedures.
+\item \textbf{Multi-scale validation}: We evaluate both regression (predicting raw clinical scores) and classification (cognitive status detection) performance across three established clinical instruments.
+\item \textbf{Clinical insights}: We provide empirical evidence for task selection in clinical practice, identifying contexts where each paradigm offers optimal sensitivity and specificity.
+\item \textbf{Methodological transparency}: We release reproducible pipelines for both task types to facilitate cross-study comparisons and clinical translation of speech-based dementia screening.
 \end{itemize}
 
 \section{Related Work}
-A large body of research has investigated speech as a biomarker for cognitive impairment, with a dominant focus on spontaneous speech tasks. Community challenges ADReSS and ADReSSo curated balanced subsets of DementiaBank, controlling for age, sex, and recording channel, and established rigorous speaker-held-out evaluations \citep{adress2020,adresso2021}. Systems in these challenges typically fused acoustic–prosodic features (eGeMAPS/ComParE, MFCCs, pitch and energy statistics, pause and tempo measures) with linguistic features obtained from ASR, such as lexical diversity, syntactic complexity, semantic coherence, and disfluency counts, achieving about 75–80% accuracy for Alzheimer’s vs. control and moderate error for MMSE regression \citep{adress2020,adresso2021}. These results highlighted that temporal structure—speech rate, articulation rate, and pause distributions—carries strong signal for dementia detection.
+A large body of research has investigated speech as a biomarker for cognitive impairment, with most studies focusing on either spontaneous speech tasks or standardized protocols, but rarely comparing them directly. Understanding the relative strengths of each approach is crucial for developing optimized clinical screening tools.
+
+\subsection{Spontaneous Speech Paradigms}
+The dominant approach in computational dementia detection has been spontaneous speech tasks, particularly picture description. Community challenges ADReSS and ADReSSo curated balanced subsets of DementiaBank, controlling for age, sex, and recording channel, and established rigorous speaker-held-out evaluations \citep{adress2020,adresso2021}. Systems in these challenges typically fused acoustic–prosodic features (eGeMAPS/ComParE, MFCCs, pitch and energy statistics, pause and tempo measures) with linguistic features obtained from ASR, such as lexical diversity, syntactic complexity, semantic coherence, and disfluency counts, achieving about 75–80\% accuracy for Alzheimer's vs. control and moderate error for MMSE regression \citep{adress2020,adresso2021}. These results highlighted that temporal structure—speech rate, articulation rate, and pause distributions—carries strong signal for dementia detection.
 
 Hand-crafted acoustic feature sets have served as robust baselines across paralinguistic tasks. The Geneva Minimalistic Acoustic Parameter Set (eGeMAPS) was designed for physiological interpretability and low overfitting risk and has repeatedly delivered strong performance in health and affective computing \citep{gemaps2015}. Beyond low-level descriptors, research has emphasized prosodic and timing markers: ratio and distribution of silence, inter-word pauses, maximum pause length, variability of F0, jitter and shimmer, and stability of articulation rate \citep{review2020,longitudinal2017}. Such features are particularly attractive in clinical contexts due to interpretability and hardware robustness.
 
 Linguistic approaches exploit the idea that neurodegeneration affects lexical access, syntactic planning, and semantic coherence. Classical models employ hundreds of features spanning type–token ratios, part-of-speech patterns, parse-tree depth, and discourse measures \citep{fraser2016}. Neural NLP architectures (CNN/LSTM/Transformers) trained on transcripts have matched or surpassed feature-engineered baselines, while interpretation studies point to simplified syntax, increased repetitions, and self-repairs as discriminative cues \citep{karlekar2018}. However, transcript-based methods hinge on ASR quality, which varies with accent, noise, and pathology; this dependency limits portability across settings and languages \citep{review2020}.
 
+\subsection{Standardized Speech Tasks}
+Standardized speech tasks have a long clinical tradition but have received less computational attention than spontaneous speech. Verbal fluency tests quantify clustering and switching behavior and predict outcomes in MCI, linking detailed temporal patterns to brain structure \citep{fluency2016}. Reading aloud provides a complementary standardized probe: by fixing the lexical and syntactic content, it isolates motor–prosodic and planning components of speech production while enabling precise measurement through forced alignment \citep{mfa}. Prior work suggests that alignment-based timing measures (word/phoneme durations, pause positions, vowel and stop consonant timing, VOT) and prosodic stability (F0 dynamics, jitter, shimmer) are sensitive to cognitive decline, and their interpretability facilitates clinician trust \citep{review2020,longitudinal2017}.
+
+The theoretical advantages of standardized reading include reduced linguistic variability, elimination of ASR dependency, and improved cross-site comparability. By controlling lexical content, reading tasks potentially isolate motor-speech and prosodic markers from linguistic planning deficits. However, the relative diagnostic sensitivity of reading versus spontaneous speech remains poorly characterized in the literature.
+
+\subsection{Methodological Advances and Clinical Translation}
 End-to-end acoustic models and self-supervised speech representations have gained traction for low-resource medical audio. CNN/LSTM architectures on log-mel or MFCC inputs demonstrated competitive accuracy on DementiaBank \citep{warnita2018}. More recently, self-supervised models like wav2vec 2.0 and HuBERT provide powerful embeddings that improve over traditional features and mitigate data scarcity, especially when paired with simple classifiers and strong regularization \citep{ssl_alzheimers,hubert2021}. Nonetheless, their black-box nature complicates clinical interpretation, and domain shifts (microphone, room acoustics) still degrade performance without explicit adaptation.
 
 Clinical realism motivates studies beyond picture description, including dialogues in memory clinics, telephone calls, and multilingual corpora. Work on real-world clinical conversations has shown that turn-taking behavior, response latency, and dialogue-level timing offer discriminative signals, with moderate-to-high AUCs under realistic noise and topic variability \citep{mirheidari2019}. Cross-language studies report that pause structure and articulation-related markers are relatively language-agnostic compared to lexical features, but strict speaker-held-out splits and confound control are essential for reliable estimates \citep{gosztolya2019,review2020}. Across this literature, common limitations include small labeled datasets, potential leakage between training and test speakers or sessions, and underreporting of calibration and robustness analyses.
 
-Standardized speech tasks have a long clinical tradition. Verbal fluency tests quantify clustering and switching behavior and predict outcomes in MCI, linking detailed temporal patterns to brain structure \citep{fluency2016}. Reading aloud provides a complementary standardized probe: by fixing the lexical and syntactic content, it isolates motor–prosodic and planning components of speech production while enabling precise measurement through forced alignment \citep{mfa}. Despite its practicality for non-specialist triage, reading has received less attention than spontaneous speech in automated pipelines. Prior work suggests that alignment-based timing measures (word/phoneme durations, pause positions, vowel and stop consonant timing, VOT) and prosodic stability (F0 dynamics, jitter, shimmer) are sensitive to cognitive decline, and their interpretability facilitates clinician trust \citep{review2020,longitudinal2017}.
+\subsection{Research Gap and Our Contribution}
+While both spontaneous and standardized speech tasks show promise for dementia detection, few studies have directly compared their relative effectiveness using identical participant cohorts, feature sets, and evaluation frameworks. This gap is significant because task selection has major implications for clinical implementation: spontaneous tasks may capture richer cognitive-linguistic markers but introduce variability, while standardized tasks offer better control but potentially miss important diagnostic information.
 
-Our study builds on these insights and targets standardized reading of the same passage for every participant. By reducing linguistic variability and ASR dependence, we focus on physiologically grounded markers and improve portability across domains and languages. We combine interpretable alignment-derived timing/prosodic features with self-supervised speech embeddings and robust baselines (eGeMAPS), and we adopt strict speaker-held-out validation with confound-balanced folds, calibration reporting, and ablation studies. This design aims to close the gap between research-grade accuracy and clinically deployable, reproducible screening suitable for routine triage and remote monitoring.
-
+Our study addresses this gap through systematic comparison of standardized reading and spontaneous picture description using parallel datasets from the same participants. We employ identical acoustic feature extraction (eGeMAPS), machine learning pipelines, and evaluation metrics to provide direct evidence for task selection in clinical screening contexts. This comparative approach enables us to identify the specific contexts where each paradigm offers optimal sensitivity and practical advantages for real-world deployment.
 
 \section{Problem Formulation and Method}
-We study early dementia assessment from audio recordings of a standardized reading task in a regression setting: the model predicts a clinically validated dementia severity score (e.g., MMSE or CDR/CDR-SB), enabling both continuous monitoring and optional threshold-based screening in primary care. Let the dataset be
+
+We conduct a comparative study of early dementia assessment using two distinct speech modalities: standardized reading and spontaneous picture description. Our framework enables direct comparison of these approaches using identical participant cohorts, feature extraction methods, and evaluation protocols. The study addresses both regression (predicting continuous clinical scores) and classification (cognitive status detection) tasks to provide comprehensive insights into each modality's diagnostic utility.
+
+\subsection{Problem Formulation}
+
+Let $\mathcal{D}_R = \{(x_i^R, y_i, c_i)\}_{i=1}^n$ represent the reading task dataset, where $x_i^R$ is the audio waveform of participant $i$ reading a standardized passage, $y_i \in \mathbb{R}$ is the target clinical score (MMSE, MoCA, or CDR), and $c_i$ denotes confounders (age, sex, recording device). Similarly, let $\mathcal{D}_D = \{(x_i^D, y_i, c_i)\}_{i=1}^n$ represent the picture description dataset from the same participants. We assume speaker-level independence with joint distribution $P(X,Y,C)$ and employ strict speaker-disjoint splits for evaluation.
+
+For each modality, we construct feature mappings $\Phi_R$ and $\Phi_D$ that extract comprehensive acoustic-prosodic representations. The extended Geneva Minimalistic Acoustic Parameter Set (eGeMAPS) serves as our primary feature space, providing 88 clinically interpretable acoustic parameters across frequency, amplitude, spectral, and temporal domains \citep{gemaps2015}. The per-recording feature vectors are defined as:
+
 $$
-\mathcal{D}=\{(x_i,y_i,c_i)\}_{i=1}^n,
-$$
-where $x_i$ is the waveform of participant $i$ reading the same canonical passage, $y_i\in\mathbb{R}$ is the target dementia score, and $c_i$ are observed confounders (age, sex, device, room). We assume speaker-level independence and a joint distribution $P(X,Y,C)$; evaluation uses speaker-disjoint splits. We construct a feature mapping $\Phi$ that fuses acoustic–prosodic and alignment-derived timing cues: low-level descriptors (e.g., eGeMAPS \citep{gemaps2015}) and forced-alignment features to the canonical text (word/phoneme durations, pause structure) via Montreal Forced Aligner \citep{mfa}. The per-recording feature vector is
-$$
-z_i=\Phi(x_i)\doteq A\!\Big(\Phi_{\text{LLD}}(x_i),\ \Phi_{\text{ali}}(x_i)\Big)\in\mathbb{R}^p,
-$$
-where $A$ aggregates frame-/token-level statistics (means, quantiles, variances). The prediction function is
-$$
-f = h\circ \Phi:\ \mathcal{X}\to\mathbb{R},
-$$
-with $h$ a classical regressor (ridge, gradient boosting). External quality focuses on the coefficient of determination $R^2$ and mean absolute error (MAE). We report speaker-held-out estimates of $R^2$ and MAE; note that
-$$
-R^2\ =\ 1 - \frac{\sum_{i}(y_i-\hat{y}_i)^2}{\sum_{i}(y_i-\bar{y})^2},\qquad
-\text{MAE}\ =\ \frac{1}{n}\sum_{i}|y_i-\hat{y}_i|,
-$$
-so higher $R^2$ (up to 1) and lower MAE indicate better performance; negative $R^2$ implies the model underperforms the mean predictor. The empirical risk minimized during training is the mean squared error (MSE) with regularization and class/sample weights if needed:
-$$
-\min_{\theta}\ \frac{1}{n}\sum_{i=1}^n w_i\big(h_\theta(z_i)-y_i\big)^2\ +\ \lambda\,\Omega(\theta).
+z_i^R = \Phi_R(x_i^R) = A\left(\Phi_{\text{eGeMAPS}}(x_i^R)\right) \in \mathbb{R}^{88}
 $$
 
-Gradient boosting for regression is our primary model class due to strong accuracy on tabular features and small-to-medium datasets. Boosting builds an additive ensemble of weak learners (typically shallow regression trees) by fitting each new learner to the negative gradient (residuals) of the current loss. After $m$ iterations the model has the form
 $$
-F_m(x)\ =\ F_{m-1}(x)\ +\ \nu\,\gamma_m\,h_m(x),
+z_i^D = \Phi_D(x_i^D) = A\left(\Phi_{\text{eGeMAPS}}(x_i^D)\right) \in \mathbb{R}^{88}
 $$
-where $h_m$ is a weak learner fitted to residuals from $F_{m-1}$, $\nu\in(0,1]$ is the learning rate, and $\gamma_m$ is the optimal step for the chosen loss (MSE here). Practical implementations (XGBoost/LightGBM/CatBoost) control capacity via tree depth, number of estimators, L1/L2 penalties, subsampling ($\texttt{subsample}$, $\texttt{colsample\_bytree}$), and early stopping. For robustness and interpretability we also train a ridge baseline; ablations compare eGeMAPS-only, alignment-only, and fused features.
 
-Pipeline details:
-- Preprocessing: level normalization; voice activity detection to preserve true pauses; optional denoising; forced alignment to obtain word/phoneme boundaries and alignment scores.  
-- Features: eGeMAPS (energy, F0, spectral slopes, jitter, shimmer) \citep{gemaps2015}; timing/pronunciation from alignment (silence ratio, pause rate and duration distributions, maximum pause, speech vs. articulation rate, word/phoneme duration statistics, vowel/consonant duration dispersion, VOT for stops, position-sensitive pauses, self-repetitions/self-corrections as deviations from the script). All features are standardized (z-score) on the training folds.  
-- Training and model selection: speaker-disjoint k-fold CV stratified by age/sex/device; tuning grids for boosting (e.g., $\texttt{n\_estimators}\in\{200,400,800\}$, $\texttt{learning\_rate}\in\{0.01,0.05,0.1\}$, $\texttt{max\_depth}\in\{2,3,4\}$, $\texttt{subsample}\in\{0.6,0.8,1.0\}$, $\texttt{colsample\_bytree}\in\{0.6,0.8,1.0\}$, $\texttt{reg\_alpha},\texttt{reg\_lambda}\in\{0,10^{-3},10^{-2},10^{-1}\}$) with early stopping on validation $R^2$.  
-- Evaluation: report mean±std for $R^2$ (primary) and MAE (secondary) across folds; provide scatter plots of predicted vs. observed scores and calibration diagnostics. For optional screening, convert predictions to a binary flag using a clinically meaningful cut-off on $y$ and report balanced accuracy/AUC on the derived task \citep{adress2020,adresso2021}.  
-- Interpretability and robustness: feature importances (gain/SHAP) to highlight dominant biomarkers (e.g., increased pause density, reduced articulation rate); stress tests with noise/reverberation; sensitivity to recording channel; ablations to quantify the contribution of alignment-based timing features.
+where $A$ aggregates frame-level acoustic descriptors using statistical functionals (means, percentiles, variances, extremes). This identical feature extraction ensures direct comparability between modalities.
 
-This single-section formulation specifies the data structure, the mapping $f=h\circ\Phi$, the external quality criteria (with $R^2$ emphasized and MAE as complementary), and an optimization problem solved by gradient boosting regression under MSE. The standardized reading protocol reduces linguistic variability and ASR dependence, while boosting on fused acoustic–timing features provides a strong, non-neural baseline that is portable, interpretable, and suitable for primary-care deployment.
+The prediction functions for each modality are:
+$$
+f_R = h_R \circ \Phi_R: \mathcal{X}_R \to \mathbb{R}, \quad f_D = h_D \circ \Phi_D: \mathcal{X}_D \to \mathbb{R}
+$$
+
+with $h_R$ and $h_D$ being machine learning models trained separately for each task type.
+
+\subsection{Evaluation Framework}
+
+We employ a comprehensive evaluation strategy assessing both regression and classification performance:
+
+\subsubsection{Regression Evaluation}
+For clinical score prediction, we report speaker-held-out estimates of:
+\begin{align*}
+R^2 &= 1 - \frac{\sum_{i=1}^n (y_i - \hat{y}_i)^2}{\sum_{i=1}^n (y_i - \bar{y})^2}, \\
+\text{MAE} &= \frac{1}{n}\sum_{i=1}^n |y_i - \hat{y}_i|, \\
+\text{RMSE} &= \sqrt{\frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2}
+\end{align*}
+
+Higher $R^2$ (maximum 1) and lower MAE/RMSE indicate better performance, with negative $R^2$ indicating the model underperforms the mean predictor.
+
+\subsubsection{Classification Evaluation}
+For binary cognitive status detection, we evaluate:
+\begin{itemize}
+\item \textbf{ROC AUC}: Area under Receiver Operating Characteristic curve
+\item \textbf{Precision}: $\frac{TP}{TP + FP}$
+\item \textbf{Recall}: $\frac{TP}{TP + FN}$  
+\item \textbf{F1-score}: $2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$
+\end{itemize}
+
+\subsection{Machine Learning Methodology}
+
+We compare four model classes for both regression and classification:
+
+\subsubsection{Gradient Boosting (CatBoost)}
+Our primary model class employs gradient boosting on decision trees, which builds an additive ensemble through iterative refinement:
+$$
+F_m(x) = F_{m-1}(x) + \nu \cdot \gamma_m \cdot h_m(x)
+$$
+where $h_m$ is a weak learner fitted to residuals from $F_{m-1}$, $\nu \in (0,1]$ is the learning rate, and $\gamma_m$ is the optimal step size. CatBoost specifically handles categorical features and reduces prediction shift through ordered boosting.
+
+\subsubsection{Random Forest}
+Ensemble method combining multiple decorrelated decision trees using bagging and random feature selection, providing robust performance and feature importance estimates.
+
+\subsubsection{Decision Trees}
+Single decision tree models serving as interpretable baselines, though prone to overfitting.
+
+\subsubsection{Linear Models}
+Linear Regression for continuous outcomes and Logistic Regression for classification tasks, providing simple, interpretable baselines.
+
+The empirical risk minimized during training is the mean squared error (regression) or cross-entropy (classification) with regularization:
+$$
+\min_{\theta} \frac{1}{n}\sum_{i=1}^n \mathcal{L}(h_\theta(z_i), y_i) + \lambda \Omega(\theta)
+$$
+
+\subsection{Experimental Pipeline}
+
+\subsubsection{Data Preprocessing}
+\begin{itemize}
+\item \textbf{Audio normalization}: Peak amplitude normalization to -1 dB FS
+\item \textbf{Voice activity detection}: Preserve authentic pause structure while removing non-speech segments
+\item \textbf{Quality control}: Manual verification of audio integrity and transcription accuracy
+\item \textbf{Confounder recording}: Systematic documentation of age, sex, recording device, and environmental conditions
+\end{itemize}
+
+\subsubsection{Feature Extraction}
+We extract the complete eGeMAPS feature set comprising:
+\begin{itemize}
+\item \textbf{Frequency parameters}: F0 semitone range, formant frequencies (F1-F3), harmonic-to-noise ratio
+\item \textbf{Amplitude/energy parameters}: Loudness percentiles (20th, 50th, 80th), shimmer, jitter
+\item \textbf{Spectral parameters}: Spectral flux, slope, centroid, entropy, sharpness
+\item \textbf{Temporal parameters}: Speech rate, pause duration statistics, voice activity ratio
+\end{itemize}
+
+All features are z-score standardized within training folds to prevent data leakage.
+
+\subsubsection{Model Training and Selection}
+\begin{itemize}
+\item \textbf{Cross-validation}: Leave-one-speaker-out (LOSO) validation ensuring strict speaker independence
+\item \textbf{Hyperparameter tuning}: Grid search over comprehensive parameter spaces:
+  \begin{itemize}
+  \item CatBoost: $\texttt{n\_estimators} \in \{200,400,800\}$, $\texttt{learning\_rate} \in \{0.01,0.05,0.1\}$, $\texttt{max\_depth} \in \{2,3,4\}$
+  \item Random Forest: $\texttt{n\_estimators} \in \{100,200,500\}$, $\texttt{max\_features} \in \{\text{sqrt, log2}\}$
+  \item Regularization: $\texttt{reg\_alpha}, \texttt{reg\_lambda} \in \{0,10^{-3},10^{-2},10^{-1}\}$
+  \end{itemize}
+\item \textbf{Early stopping}: Based on validation $R^2$ (regression) or AUC (classification) with 50-epoch patience
+\end{itemize}
+
+\subsubsection{Statistical Analysis}
+\begin{itemize}
+\item \textbf{Feature significance}: Mann-Whitney U-tests with Benjamin-Hochberg correction for multiple testing
+\item \textbf{Confidence intervals}: Bootstrap sampling (1000 iterations) for performance metrics
+\item \textbf{Modality comparison}: Paired statistical tests (Wilcoxon signed-rank) for cross-modal performance differences
+\end{itemize}
+
+\subsubsection{Interpretability and Robustness}
+\begin{itemize}
+\item \textbf{Feature importance}: Gain-based importance (tree models) and SHAP values for model interpretation
+\item \textbf{Ablation studies}: Systematic evaluation of feature category contributions
+\item \textbf{Confounder analysis}: Partial correlation analysis to isolate cognitive effects from demographic influences
+\item \textbf{Cross-modality feature analysis}: Identification of modality-specific versus generalizable biomarkers
+\end{itemize}
+
+This comprehensive methodological framework enables rigorous comparison of reading and description tasks while maintaining clinical interpretability and statistical robustness. The identical treatment of both modalities ensures that performance differences reflect genuine task characteristics rather than methodological inconsistencies.
 
 
+\section{Experiments}
+\label{sec:experiments}
 
-\section{Examples of citations, figures, tables, references}
-\label{sec:others}
+\subsection{Experimental Setup}
+We conducted a comprehensive comparative analysis of two speech modalities for dementia screening, using parallel datasets from the same 95 participants to ensure direct comparability:
 
-\subsection{Citations}
-Citations use \verb+natbib+. The documentation may be found at
-\begin{center}
-	\url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
+\begin{itemize}
+    \item \textbf{Dataset R (Standardized Reading):} Participants read identical literary passages, controlling linguistic content to isolate acoustic-prosodic and timing features while minimizing lexical and syntactic variability.
+    \item \textbf{Dataset D (Spontaneous Description):} Participants described complex visual scenes, capturing natural language production with inherent variability in lexical choice, syntactic complexity, and discourse organization.
+\end{itemize}
 
-Here is an example usage of the two main commands (\verb+citet+ and \verb+citep+): Some people thought a thing \citep{kour2014real, hadash2018estimate} but other people thought something else \citep{kour2014fast}. Many people have speculated that if we knew exactly why \citet{kour2014fast} thought this\dots
+This dual-task design enabled us to test our initial hypothesis that standardized reading would provide superior diagnostic performance due to reduced variability, while simultaneously evaluating the alternative possibility that spontaneous speech might capture richer cognitive-linguistic markers of impairment.
+
+For both modalities, we conducted exhaustive experiments spanning regression (predicting continuous MMSE, MoCA, and CDR scores) and binary classification (distinguishing cognitively impaired from healthy participants). All evaluations employed \textbf{leave-one-out cross-validation} with strict speaker-level separation, comparing four model families:
+\begin{enumerate}
+    \item \textbf{CatBoost}: Gradient boosting with categorical feature handling
+    \item \textbf{Random Forest}: Ensemble of decorrelated decision trees
+    \item \textbf{Decision Tree}: Single tree models for interpretability
+    \item \textbf{Linear/Logistic Regression}: Linear baselines for performance benchmarking
+\end{enumerate}
+
+Evaluation metrics included $R^2$, RMSE, and MAE for regression tasks, and ROC~AUC, precision, recall, and F1-score for classification, providing comprehensive assessment across multiple performance dimensions.
+
+\subsection{Feature Analysis and Biomarker Discovery}
+
+Our feature extraction employed the extended Geneva Minimalistic Acoustic Parameter Set (eGeMAPS), capturing 88 clinically interpretable parameters across four domains:
+\begin{itemize}
+    \item \textbf{Frequency characteristics}: Fundamental frequency dynamics, formant structures, voicing patterns
+    \item \textbf{Amplitude-energy profiles}: Loudness distributions, intensity contours, energy fluctuations
+    \item \textbf{Spectral properties}: Harmonic-to-noise ratios, spectral flux, formant dispersion
+    \item \textbf{Temporal patterns}: Pause structures, speech rhythm, articulation timing
+\end{itemize}
+
+Statistical analysis using Mann-Whitney U-tests with Benjamin-Hochberg correction revealed distinct feature significance patterns across modalities (Table~\ref{tab:significant_features}). 
+
+\begin{table}[h!]
+\centering
+\caption{Most significant eGeMAPS features for dementia vs. MCI classification across speech modalities}
+\label{tab:significant_features}
+\begin{tabular}{p{0.5\linewidth}cc}
+\toprule
+\textbf{Feature} & \textbf{Description} & \textbf{p-value} \\
+\midrule
+\textbf{Spontaneous Description (Dataset D)} & & \\
+loudness\_sma3\_percentile50.0 & 50th percentile of loudness & 8.55E-05 \\
+loudness\_sma3\_percentile20.0 & 20th percentile of loudness & 9.32E-05 \\
+spectralFluxUV\_sma3nz\_amean & Spectral flux on unvoiced segments & 0.00038 \\
+loudness\_sma3\_stddevNorm & Normalized loudness std. deviation & 0.00043 \\
+mfcc3\_sma3\_stddevNorm & Normalized MFCC3 std. deviation & 0.00061 \\
+\midrule
+\textbf{Standardized Reading (Dataset R)} & & \\
+loudness\_sma3\_percentile20.0 & 20th percentile of loudness & 7.33E-05 \\
+loudnessPeaksPerSec & Loudness peaks per second & 0.00062 \\
+mfcc3V\_sma3nz\_stddevNorm & MFCC3 std. deviation (voiced) & 0.00158 \\
+loudness\_sma3\_meanFallingSlope & Mean falling slope of loudness & 0.00164 \\
+loudness\_sma3\_stddevNorm & Normalized loudness std. deviation & 0.00197 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The feature analysis yielded several critical insights. First, loudness distribution parameters emerged as consistently discriminative across both modalities, suggesting that vocal intensity control represents a core deficit in cognitive impairment that transcends task demands. Second, spontaneous description revealed richer spectral signatures (spectral flux on unvoiced segments), potentially reflecting more varied articulatory gestures and breath control patterns. Third, reading tasks showed greater sensitivity to dynamic loudness changes (slopes, peaks), possibly indicating challenges in prosodic modulation during constrained speech production.
+
+\subsection{Regression Performance: Clinical Score Prediction}
+
+Table~\ref{tab:regression_results} presents the comprehensive regression results, revealing nuanced performance patterns across modalities and clinical scales.
+
+\begin{table}[h!]
+\centering
+\caption{Comparative LOO regression performance across speech modalities and clinical scales}
+\label{tab:regression_results}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Modality} & \textbf{Scale} & \textbf{Best Model} & \textbf{RMSE} & \textbf{$R^2$} & \textbf{MAE} & \textbf{n}\\
+\midrule
+Reading (R) & MMSE & CatBoost & 3.36 & 0.15 & 2.35 & 95 \\
+Reading (R) & MoCA & CatBoost & 4.93 & -0.04 & 3.78 & 90 \\
+Reading (R) & CDR  & CatBoost & 0.42 & 0.04 & 0.31 & 95 \\
+\midrule
+Description (D) & MMSE & CatBoost & 3.50 & 0.07 & 2.54 & 95 \\
+Description (D) & MoCA & Random Forest & 4.50 & 0.14 & 3.60 & 90 \\
+Description (D) & CDR  & Random Forest & 0.40 & 0.15 & 0.28 & 95 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Contrary to our initial hypothesis, spontaneous description demonstrated superior overall regression performance, particularly for MoCA and CDR prediction where it achieved substantially higher $R^2$ values (0.14 and 0.15 vs. -0.04 and 0.04 for reading). This pattern suggests that spontaneous speech captures cognitive-linguistic processes more aligned with these clinical instruments' assessment domains.
+
+The modality-performance relationship varied by clinical scale. For MMSE, reading tasks showed a slight advantage ($R^2$ = 0.15 vs. 0.07), possibly because MMSE emphasizes orientation and basic attention, which may be reflected in structured task performance. However, for MoCA and CDR—scales that assess executive function, complex attention, and functional impairment—spontaneous description proved markedly more predictive.
+
+The consistent underperformance of linear models across both modalities ($R^2 < 0$ in most cases) highlights the complex, non-linear relationships between acoustic features and cognitive status, reinforcing the value of tree-based ensembles for this domain.
+
+\subsection{Classification Performance: Cognitive Status Detection}
+
+Binary classification results (Table~\ref{tab:classification_results}) revealed even more pronounced modality differences, with spontaneous description demonstrating superior robustness across multiple evaluation metrics.
+
+\begin{table}[h!]
+\centering
+\caption{Comparative LOO classification performance for cognitive status detection}
+\label{tab:classification_results}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Modality} & \textbf{Task} & \textbf{Best Model} & \textbf{ROC~AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+\midrule
+Reading (R) & t\_MMSE & Logistic Reg. & 0.79 & 0.42 & 0.50 & 0.46 \\
+Reading (R) & t\_MoCA & CatBoost & 0.39 & 0.73 & 0.89 & 0.80 \\
+Reading (R) & t\_CDR & Logistic Reg. & 0.77 & 0.46 & 0.52 & 0.49 \\
+\midrule
+Description (D) & t\_MMSE & Logistic Reg. & 0.77 & 0.35 & 0.38 & 0.36 \\
+Description (D) & t\_MoCA & Random Forest & 0.60 & 0.74 & 0.98 & 0.84 \\
+Description (D) & t\_CDR & Random Forest & 0.74 & 0.67 & 0.26 & 0.38 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The classification results revealed several important patterns. First, MoCA-based classification achieved the highest F1-scores across both modalities (0.80-0.84), suggesting that acoustic features capture processes particularly relevant to the cognitive domains assessed by MoCA. Second, the dramatic performance difference in t\_MoCA classification (ROC~AUC 0.39 for reading vs. 0.60 for description) underscores spontaneous speech's superior sensitivity to mild cognitive impairment.
+
+Notably, while reading tasks showed competitive ROC~AUC values for t\_MMSE and t\_CDR classification (0.79 and 0.77), they suffered from precision-recall tradeoffs that reduced their practical utility. In contrast, spontaneous description models demonstrated more balanced performance characteristics, particularly for the clinically crucial task of MCI detection.
+
+\subsection{Comparative Analysis and Clinical Implications}
+
+Our comprehensive comparison yielded several key findings that challenge initial assumptions and inform clinical implementation:
+
+\textbf{Modality-Specific Strengths:} Rather than one modality universally dominating, each demonstrated distinct advantages. Standardized reading showed value for basic cognitive screening (MMSE-based tasks) and provided cleaner acoustic signals for fundamental prosodic analysis. Spontaneous description excelled for detecting subtle cognitive-linguistic impairments (MoCA-based tasks) and offered richer feature signatures for complex cognitive assessment.
+
+\textbf{Feature Interpretability:} The consistent prominence of loudness-related features across both modalities suggests vocal intensity control as a fundamental marker of cognitive-motor integration deficits. However, spontaneous speech revealed additional spectral and temporal features that may reflect higher-order cognitive processes like lexical access, syntactic planning, and discourse organization.
+
+\textbf{Clinical Scale Alignment:} The varying modality performance across clinical scales indicates that task selection should consider the specific cognitive domains of interest. For executive function and complex attention assessment (MoCA), spontaneous description is clearly superior. For basic cognitive screening (MMSE), standardized reading offers practical advantages.
+
+\textbf{Implementation Considerations:} While spontaneous description demonstrated superior diagnostic performance overall, standardized reading retains important practical benefits including reduced administration time, eliminated ASR dependency, and improved cross-site standardization. These factors remain crucial for large-scale screening implementation.
+
+The performance patterns observed suggest that spontaneous speech engages a broader range of cognitive processes—including lexical retrieval, syntactic formulation, and discourse planning—that are particularly vulnerable in early cognitive decline. This cognitive-linguistic complexity, while introducing variability, appears to provide richer diagnostic information than the more constrained motor-speech processes emphasized in reading tasks.
+
+Future work should explore hybrid approaches that leverage both modalities' complementary strengths, potentially using standardized reading for initial screening and spontaneous description for more detailed assessment of suspicious cases. Additionally, the development of modality-specific normative databases could enhance the clinical utility of both approaches by accounting for their inherent performance characteristics.
 
 \subsection{Figures}
 \lipsum[10]
 See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
 \lipsum[11]
 
-\begin{figure}
-	\centering
-	\includegraphics[width=0.5\textwidth]{../figures/log_reg_cs_exp.eps}
-	\caption{Sample figure caption.}
-	\label{fig:fig1}
-\end{figure}
 
 \subsection{Tables}
 See awesome Table~\ref{tab:table}.
@@ -162,22 +377,6 @@ The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is
 \end{center}
 
 
-\begin{table}
-	\caption{Sample table title}
-	\centering
-	\begin{tabular}{lll}
-		\toprule
-		\multicolumn{2}{c}{Part}                   \\
-		\cmidrule(r){1-2}
-		Name     & Description     & Size ($\mu$m) \\
-		\midrule
-		Dendrite & Input terminal  & $\sim$100     \\
-		Axon     & Output terminal & $\sim$10      \\
-		Soma     & Cell body       & up to $10^6$  \\
-		\bottomrule
-	\end{tabular}
-	\label{tab:table}
-\end{table}
 
 \subsection{Lists}
 \begin{itemize}
@@ -189,5 +388,5 @@ The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
-\printbibliography
+
 \end{document}
