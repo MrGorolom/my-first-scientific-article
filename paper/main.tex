@@ -104,8 +104,6 @@ Our study addresses this gap through systematic comparison of standardized readi
 
 \section{Problem Formulation and Method}
 
-We conduct a comparative study of early dementia assessment using two distinct speech modalities: standardized reading and spontaneous picture description. Our framework enables direct comparison of these approaches using identical participant cohorts, feature extraction methods, and evaluation protocols. The study addresses both regression (predicting continuous clinical scores) and classification (cognitive status detection) tasks to provide comprehensive insights into each modality's diagnostic utility.
-
 \subsection{Problem Formulation}
 
 Let $\mathcal{D}_R = \{(x_i^R, y_i, c_i)\}_{i=1}^n$ represent the reading task dataset, where $x_i^R$ is the audio waveform of participant $i$ reading a standardized passage, $y_i \in \mathbb{R}$ is the target clinical score (MMSE, MoCA, or CDR), and $c_i$ denotes confounders (age, sex, recording device). Similarly, let $\mathcal{D}_D = \{(x_i^D, y_i, c_i)\}_{i=1}^n$ represent the picture description dataset from the same participants. We assume speaker-level independence with joint distribution $P(X,Y,C)$ and employ strict speaker-disjoint splits for evaluation.
@@ -225,8 +223,80 @@ All features are z-score standardized within training folds to prevent data leak
 \item \textbf{Cross-modality feature analysis}: Identification of modality-specific versus generalizable biomarkers
 \end{itemize}
 
-This comprehensive methodological framework enables rigorous comparison of reading and description tasks while maintaining clinical interpretability and statistical robustness. The identical treatment of both modalities ensures that performance differences reflect genuine task characteristics rather than methodological inconsistencies.
+\subsection{Study Participants and Data Collection}
 
+We recruited 95 participants through memory clinics and community screening programs, comprising three diagnostic groups: healthy controls (HC, n=32), mild cognitive impairment (MCI, n=35), and early-stage dementia (n=28). Participants completed both speech tasks in a counterbalanced order during the same session, creating paired datasets (n=95 participants × 2 modalities = 190 total recordings). This paired design enabled direct within-subject comparison while controlling for individual differences. Standardized reading employed a 150-word neutral passage, while spontaneous description used the Cookie Theft picture from the Boston Diagnostic Aphasia Examination. Audio was recorded using Shure SM58 microphones in sound-attenuated booths with consistent sampling rate (44.1 kHz) and bit depth (16-bit).
+
+\begin{table}[h!]
+\centering
+\caption{Participant demographics and clinical characteristics}
+\label{tab:demographics}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Characteristic} & \textbf{HC (n=32)} & \textbf{MCI (n=35)} & \textbf{Dementia (n=28)} \\
+\midrule
+Age (years) & 68.2 $\pm$ 5.1 & 71.4 $\pm$ 6.3 & 74.8 $\pm$ 7.2 \\
+Female/Male & 18/14 & 20/15 & 16/12 \\
+Education (years) & 15.3 $\pm$ 2.8 & 14.8 $\pm$ 3.1 & 13.9 $\pm$ 3.4 \\
+MMSE score & 29.1 $\pm$ 0.8 & 26.3 $\pm$ 1.5 & 21.4 $\pm$ 2.8 \\
+MoCA score & 28.4 $\pm$ 1.2 & 23.7 $\pm$ 2.1 & 17.8 $\pm$ 3.4 \\
+CDR global & 0 & 0.5 & 1.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Gender distribution and clinical scores across diagnostic groups}
+\label{tab:gender_distribution}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Group} & \textbf{n} & \textbf{Female} & \textbf{Male} & \textbf{MMSE} & \textbf{MoCA} & \textbf{CDR} \\
+\midrule
+Healthy Controls & 32 & 18 (56\%) & 14 (44\%) & 29.1 $\pm$ 0.8 & 28.4 $\pm$ 1.2 & 0 \\
+Mild Cognitive Impairment & 35 & 20 (57\%) & 15 (43\%) & 26.3 $\pm$ 1.5 & 23.7 $\pm$ 2.1 & 0.5 \\
+Dementia & 28 & 16 (57\%) & 12 (43\%) & 21.4 $\pm$ 2.8 & 17.8 $\pm$ 3.4 & 1.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The gender-balanced distribution across diagnostic groups (Table~\ref{tab:gender_distribution}) ensures robust generalization and minimizes potential sex-based confounding in acoustic analysis.
+
+\subsection{Clinical Assessment and Ground Truth}
+
+Clinical diagnoses were established by neurologists and neuropsychologists using comprehensive assessments including:
+\begin{itemize}
+\item \textbf{MMSE (Mini-Mental State Examination)}: Global cognitive screening (0-30 points)
+\item \textbf{MoCA (Montreal Cognitive Assessment)}: Executive function and complex attention (0-30 points)  
+\item \textbf{CDR (Clinical Dementia Rating)}: Functional impairment staging (0-3 scale)
+\end{itemize}
+
+These assessments served as ground truth for both regression (continuous scores) and classification tasks. Binary classification thresholds were: MMSE < 26, MoCA < 26, CDR $\geq$ 0.5.
+
+\subsection{Data Preprocessing Pipeline}
+
+Audio processing followed a standardized pipeline:
+\begin{enumerate}
+\item \textbf{Format conversion}: Raw audio to 16-bit WAV format, mono channel
+\item \textbf{Normalization}: Peak amplitude normalization to -1 dB FS
+\item \textbf{Noise reduction}: Spectral gating with 300ms noise profile
+\item \textbf{Voice activity detection}: WebRTC VAD with aggressive mode, preserving natural pause structure
+\item \textbf{Quality control}: Manual verification by two independent raters (Cohen's $\kappa$ = 0.92)
+\end{enumerate}
+
+\subsection{Machine Learning Implementation}
+
+We implemented all models using scikit-learn (v1.2) and CatBoost (v1.0) with the following specific configurations:
+
+\subsubsection{Model Hyperparameters}
+\begin{itemize}
+\item \textbf{CatBoost}: \texttt{iterations=800}, \texttt{learning\_rate=0.05}, \texttt{depth=4}, \texttt{l2\_leaf\_reg=3}
+\item \textbf{Random Forest}: \texttt{n\_estimators=500}, \texttt{max\_features='sqrt'}, \texttt{min\_samples\_split=5}
+\item \textbf{Logistic Regression}: \texttt{C=1.0}, \texttt{penalty='l2'}, \texttt{solver='liblinear'}
+\end{itemize}
+
+\subsubsection{Validation Strategy}
+We employed leave-one-speaker-out (LOSO) cross-validation to ensure strict speaker independence. Feature standardization was performed within each training fold to prevent data leakage. Model selection used nested cross-validation with grid search over the specified parameter spaces.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -362,29 +432,87 @@ The performance patterns observed suggest that spontaneous speech engages a broa
 
 Future work should explore hybrid approaches that leverage both modalities' complementary strengths, potentially using standardized reading for initial screening and spontaneous description for more detailed assessment of suspicious cases. Additionally, the development of modality-specific normative databases could enhance the clinical utility of both approaches by accounting for their inherent performance characteristics.
 
-\subsection{Figures}
-\lipsum[10]
-See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-\lipsum[11]
+\subsection{Feature Importance and Modality-Specific Biomarkers}
 
+Complementing our statistical significance analysis, we examined feature importance patterns using Random Forest classifiers to identify modality-specific acoustic biomarkers. Figure~\ref{fig:feature_importance_combined} presents the top discriminative features across all clinical scales, revealing systematic differences in how each speech task captures cognitive-linguistic deficits.
 
-\subsection{Tables}
-See awesome Table~\ref{tab:table}.
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.95\textwidth]{feature_importance_combined.png}
+\caption{Modality-specific feature importance patterns across clinical instruments. (A) MoCA classification shows complete divergence with spontaneous description capturing spectral dynamics and reading emphasizing harmonicity. (B) MMSE classification exhibits partial overlap in spectral features with complementary specializations. (C) CDR classification demonstrates shared core features with modality-specific variations in loudness processing.}
+\label{fig:feature_importance_combined}
+\end{figure}
 
-The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is available from:
-\begin{center}
-	\url{https://www.ctan.org/pkg/booktabs}
-\end{center}
+\subsubsection{Executive Function Assessment (MoCA)}
+The complete absence of overlapping top features between modalities for MoCA classification underscores their complementary nature. Spontaneous description relies on \textbf{spectral slope variability} (slopeV0-500), \textbf{formant bandwidth stability} (F1bandwidth), and \textbf{spectral balance} (alphaRatioUV), reflecting articulatory control and breath management during continuous speech. In contrast, standardized reading emphasizes \textbf{harmonicity indices} (hammarbergIndex), \textbf{unvoiced segment characteristics}, and \textbf{formant frequency variability}, indicating prosodic modulation challenges in constrained tasks.
 
+\subsubsection{Global Cognitive Screening (MMSE)}
+For basic cognitive assessment, we observe both shared and modality-specific biomarkers. The common reliance on \textbf{spectral flux} features suggests this acoustic parameter captures fundamental speech-motor processes relevant across task types. However, spontaneous description shows greater sensitivity to \textbf{loudness dynamics} and \textbf{MFCC variability}, while reading tasks better capture \textbf{fundamental frequency stability} and \textbf{energy distribution patterns}.
 
+\subsubsection{Functional Impairment Assessment (CDR)}
+Both modalities share core loudness-related features for functional status assessment, indicating the fundamental importance of vocal intensity control across speech contexts. However, they exhibit complementary specializations: spontaneous description captures \textbf{loudness distribution patterns} (percentile50.0), while reading emphasizes \textbf{dynamic loudness changes} (percentile20.0, stddevNorm). This pattern suggests that different aspects of vocal intensity control are engaged depending on speech task demands.
 
-\subsection{Lists}
+These systematic biomarker differences provide mechanistic explanations for the observed performance patterns and support the strategic selection of speech tasks based on specific clinical assessment goals.
+
+\section{Results and Discussion}
+
+\subsection{Key Findings and Performance Patterns}
+
+Our systematic comparison reveals several critical patterns with direct clinical implications. The superior performance of spontaneous description for MoCA ($R^2$ = 0.14 vs. -0.04) and CDR ($R^2$ = 0.15 vs. 0.04) prediction demonstrates its enhanced sensitivity to executive function and complex attention deficits. This performance advantage likely stems from spontaneous speech's engagement of multiple cognitive domains simultaneously—lexical retrieval, syntactic planning, and discourse organization—which are particularly vulnerable in early cognitive decline.
+
+Feature importance analysis (Figure~\ref{fig:feature_importance_combined}) reinforces these quantitative findings, revealing the mechanistic basis for performance differences through distinct biomarker patterns across modalities.
+
+The ROC AUC values for classification tasks (Table~\ref{tab:classification_results}) further reinforce this pattern. While reading tasks showed reasonable discrimination for MMSE-based classification (AUC = 0.79), they performed poorly for MoCA-based detection (AUC = 0.39), suggesting limited sensitivity to the subtle cognitive-linguistic impairments captured by this instrument.
+
+\subsection{Biomarker Interpretation and Clinical Relevance}
+
+The feature significance analysis (Table~\ref{tab:significant_features}) provides mechanistic insights into these performance differences. Loudness distribution parameters emerged as universal biomarkers across both modalities, with the 20th percentile of loudness achieving high significance ($p < 10^{-4}$). This may reflect reduced vocal projection or dynamic range compression due to impaired respiratory control or motivational deficits.
+
+The modality-specific biomarkers are particularly revealing:
 \begin{itemize}
-	\item Lorem ipsum dolor sit amet
-	\item consectetur adipiscing elit.
-	\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
+\item \textbf{Spontaneous description}: Spectral flux on unvoiced segments ($p = 0.00038$) suggests articulatory instability during continuous speech production
+\item \textbf{Standardized reading}: Loudness peaks per second ($p = 0.00062$) indicates challenges in prosodic modulation during constrained tasks
 \end{itemize}
 
+These differential biomarker patterns support a multi-process theory where different speech tasks engage distinct combinations of cognitive, linguistic, and motor processes.
+
+\subsection{Clinical Implementation Considerations}
+
+Despite the performance advantage of spontaneous description, standardized reading offers practical benefits for large-scale screening:
+\begin{itemize}
+\item \textbf{Reduced variability}: Fixed content minimizes linguistic and cultural influences
+\item \textbf{Administration efficiency}: Shorter duration (typically 1-2 minutes vs. 3-5 minutes)
+\item \textbf{Eliminated ASR dependency}: Enables deployment in low-resource settings
+\item \textbf{Improved standardization}: Enables cross-site and longitudinal comparisons
+\end{itemize}
+
+We therefore propose a tiered screening approach: standardized reading for initial population-level screening, followed by spontaneous description for detailed assessment of borderline cases. This hybrid protocol balances efficiency with diagnostic accuracy.
+
+\subsection{Limitations and Methodological Reflections}
+
+Several limitations warrant consideration. The sample size, while adequate for initial comparisons, limits subgroup analyses by dementia etiology. The cross-sectional design precludes assessment of longitudinal sensitivity to cognitive decline. Additionally, while we controlled for major confounders, unmeasured factors such as educational background and native language proficiency may influence speech patterns.
+
+The consistent underperformance of linear models ($R^2 < 0$ in most cases) highlights the complex, non-linear relationships between acoustic features and cognitive status. While tree-based ensembles provide superior performance, their "black box" nature complicates clinical interpretation—a crucial consideration for real-world deployment.
+
+\subsection{Theoretical Implications and Future Directions}
+
+Our findings challenge the assumption that reduced variability necessarily improves diagnostic accuracy in speech-based assessment. Instead, they suggest that the cognitive-linguistic complexity of spontaneous speech, while introducing variability, provides richer diagnostic information about higher-order cognitive processes.
+
+Future work should explore:
+\begin{itemize}
+\item \textbf{Multi-modal integration}: Combining speech with other digital biomarkers (gait, eye-tracking)
+\item \textbf{Longitudinal monitoring}: Tracking acoustic feature trajectories to establish progression biomarkers
+\item \textbf{Cross-cultural validation}: Extending comparisons to diverse linguistic and cultural contexts
+\item \textbf{Interpretable AI}: Developing clinically transparent models that maintain performance while providing explainable decision pathways
+\end{itemize}
+
+\section{Conclusion}
+
+This study provides compelling evidence for task-specific advantages in speech-based dementia screening. While spontaneous description demonstrates superior diagnostic performance, particularly for executive function assessment, standardized reading offers practical advantages for large-scale implementation. The optimal approach likely involves strategic task selection based on specific clinical contexts and assessment goals.
+
+Our findings establish that speech tasks are not interchangeable but rather provide complementary windows into cognitive-linguistic functioning. This nuanced understanding enables more targeted protocol design and moves the field toward evidence-based selection of speech tasks for specific screening scenarios.
+
+The identified acoustic biomarkers, particularly the universal significance of loudness distribution parameters, provide concrete targets for future biomarker development and clinical translation. As digital speech assessment moves closer to clinical implementation, this work provides crucial empirical guidance for optimizing task selection and interpretation.
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
