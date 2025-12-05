@@ -1,0 +1,363 @@
+\documentclass[10pt,pdf,hyperref={unicode}]{beamer}
+
+\mode<presentation>
+{
+\usetheme{boxes}
+\beamertemplatenavigationsymbolsempty
+
+\setbeamertemplate{footline}[page number]
+\setbeamersize{text margin left=0.5em, text margin right=0.5em}
+}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage{bm}
+\usepackage{multirow}
+\usepackage{ragged2e}
+\usepackage{indentfirst}
+\usepackage{multicol}
+\usepackage{subfig}
+\usepackage{amsmath,amssymb}
+\usepackage{enumerate}
+\usepackage{mathtools}
+\usepackage{comment}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{makecell}
+
+\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows}
+
+\tikzstyle{name} = [parameters]
+\definecolor{name}{rgb}{0.5,0.5,0.5}
+
+\usepackage{caption}
+\captionsetup{skip=0pt,belowskip=0pt}
+
+\newtheorem{rustheorem}{Теорема}
+\newtheorem{russtatement}{Утверждение}
+\newtheorem{rusdefinition}{Определение}
+
+% colors
+\definecolor{darkgreen}{rgb}{0.0, 0.2, 0.13}
+\definecolor{darkcyan}{rgb}{0.0, 0.55, 0.55}
+\definecolor{darkred}{rgb}{0.6, 0.0, 0.0}
+\definecolor{myblue}{rgb}{0.0, 0.2, 0.6}
+\definecolor{mygray}{rgb}{0.9, 0.9, 0.9}
+
+\AtBeginEnvironment{figure}{\setcounter{subfigure}{0}}
+
+\captionsetup[subfloat]{labelformat=empty}
+
+% Таблицы с границами
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}m{#1}}
+
+%----------------------------------------------------------------------------------------------------------
+
+\title[Скрининг деменции по речи]{Сравнение речевых тестов для ранней диагностики деменции}
+\author{Д.С. Слободин, О.В. Сенько}
+
+\institute[]{Московский государственный университет \\ Факультет ВМК}
+\date[2024]{}
+
+%---------------------------------------------------------------------------------------------------------
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Клиническая проблема: необходимость ранней диагностики}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{Текущие ограничения}
+\begin{itemize}
+\item Поздняя диагностика (стадия деменции)
+\item Субъективность клинических тестов
+\item Высокая стоимость обследования
+\item Недоступность в регионах
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{Наше решение}
+\begin{itemize}
+\item Объективный цифровой биомаркер
+\item Быстрая запись (3-5 минут)
+\item Автоматизированный анализ
+\item Возможность удалённого скрининга
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\bigskip
+\begin{center}
+\color{darkred}
+\textbf{Исследовательский вопрос:} Какой речевой тест эффективнее для скрининга?
+\end{center}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Уникальный датасет: 95 участников с клиническим подтверждением}
+\begin{block}{Сложности сбора медицинских речевых данных}
+\begin{itemize}
+\item Клиническая верификация диагноза (неврологи + нейропсихологи)
+\item Согласие пациентов с когнитивными нарушениями
+\item Контроль условий записи
+\item Баланс по полу и возрасту
+\end{itemize}
+\end{block}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Группа} & \textbf{n} & \textbf{Мужчины/Женщины} & \textbf{Возраст (лет)} \\
+\hline
+Здоровые & 32 & 14/18 & 68.2 ± 5.1 \\
+MCI & 35 & 15/20 & 71.4 ± 6.3 \\
+Деменция & 28 & 12/16 & 74.8 ± 7.2 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Ключевая особенность: каждый участник выполнил оба теста}} \\
+\hline
+\end{tabular}
+\end{table}
+
+\bigskip
+\begin{center}
+\color{darkgreen}
+\textbf{Редкая возможность прямого сравнения на идентичной когорте}
+\end{center}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Распределение целевых переменных}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{Регрессия: клинические шкалы}
+\includegraphics[width=\textwidth]{target_distribution_regression.jpg}
+\begin{itemize}
+\item MMSE: 0-30
+\item MoCA: 0-30  
+\item CDR: 0-3
+\end{itemize}
+\end{center}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{Классификация: бинарные задачи}
+\includegraphics[width=\textwidth]{target_distribution_classification.jpg}
+\begin{itemize}
+\item t\_MMSE: <26 vs ≥26
+\item t\_MoCA: <26 vs ≥26
+\item t\_CDR: <0.5 vs ≥0.5
+\end{itemize}
+\end{center}
+\end{column}
+\end{columns}
+
+\bigskip
+\begin{center}
+\color{myblue}
+\textbf{Две постановки задачи: регрессия и классификация}
+\end{center}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Экспериментальная установка}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Компонент} & \textbf{Опция 1} & \textbf{Опция 2} & \textbf{Опция 3} \\
+\hline
+\textbf{Речевой тест} & Чтение (R) & Описание (D) & - \\
+\hline
+\textbf{Признаки (openSMILE)} & eGeMAPS (88) & GeMAPS (62) & EMOBASE (988) \\
+\hline
+\textbf{Модель (ML)} & Random Forest & Gradient Boosting & Log. Regression \\
+\hline
+\textbf{Валидация} & \multicolumn{3}{c|}{Leave-One-Out (95 фолдов)} \\
+\hline
+\textbf{Целевые шкалы} & \multicolumn{3}{c|}{MMSE, MoCA, CDR} \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{block}{Гипотеза и альтернатива}
+\begin{itemize}
+\item \textbf{Гипотеза:} Меньше вариативность → лучше диагностика (чтение лучше)
+\item \textbf{Альтернатива:} Больше когнитивной нагрузки → больше сигнала (описание лучше)
+\end{itemize}
+\end{block}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Результаты регрессии: сравнение модальностей}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|l|c|c|c|}
+\hline
+\textbf{Модальность} & \textbf{Шкала} & \textbf{RMSE} & \textbf{R²} & \textbf{Лучшая модель} \\
+\hline
+\multirow{3}{*}{\textbf{Чтение (R)}} & MMSE & 3.36 & 0.15 & CatBoost \\
+ & MoCA & 4.93 & -0.04 & CatBoost \\
+ & CDR & 0.42 & 0.04 & CatBoost \\
+\hline
+\multirow{3}{*}{\textbf{Описание (D)}} & MMSE & 3.50 & 0.07 & CatBoost \\
+ & MoCA & 4.50 & \cellcolor{mygray}0.14 & Random Forest \\
+ & CDR & 0.40 & \cellcolor{mygray}0.15 & Random Forest \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{block}{Ключевой вывод}
+\begin{itemize}
+\item Спонтанное описание превосходит чтение для MoCA и CDR
+\item Чтение немного лучше для MMSE
+\item MoCA и CDR оценивают исполнительные функции — лучше выявляются в спонтанной речи
+\end{itemize}
+\end{block}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Результаты классификации: ROC-AUC}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|l|c|c|c|c|}
+\hline
+\textbf{Модальность} & \textbf{Задача} & \textbf{ROC-AUC} & \textbf{F1-score} & \textbf{Precision} & \textbf{Лучшая модель} \\
+\hline
+\multirow{3}{*}{\textbf{Чтение (R)}} & t\_MMSE & 0.79 & 0.46 & 0.42 & Log. Regression \\
+ & t\_MoCA & 0.39 & 0.80 & 0.73 & CatBoost \\
+ & t\_CDR & 0.77 & 0.49 & 0.46 & Log. Regression \\
+\hline
+\multirow{3}{*}{\textbf{Описание (D)}} & t\_MMSE & 0.77 & 0.36 & 0.35 & Log. Regression \\
+ & t\_MoCA & \cellcolor{mygray}0.60 & \cellcolor{mygray}0.84 & 0.74 & Random Forest \\
+ & t\_CDR & 0.74 & 0.38 & 0.67 & Random Forest \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{block}{Основные наблюдения}
+\begin{itemize}
+\item \textbf{t\_MoCA:} Описание значительно лучше (0.60 vs 0.39)
+\item \textbf{t\_MMSE:} Обе модальности показывают высокий AUC (>0.77)
+\item \textbf{Лучшая модель:} Random Forest для сложных задач
+\item \textbf{Практическая значимость:} Описание лучше для раннего выявления MCI
+\end{itemize}
+\end{block}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Оптимальная техническая конфигурация}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Набор признаков} & \textbf{Лучшая модель} & \textbf{ROC-AUC} & \textbf{F1-score} & \textbf{Число признаков} \\
+\hline
+EGEMAPS\_D & Random Forest & 0.7428 & 0.3429 & 88 \\
+\hline
+EGEMAPS\_R & Gradient Boosting & 0.7421 & 0.4500 & 88 \\
+\hline
+EMOBASE\_R & Random Forest & \cellcolor{mygray}0.8062 & 0.3636 & 988 \\
+\hline
+GEMAPS\_D & Random Forest & 0.7246 & 0.4211 & 62 \\
+\hline
+GEMAPS\_R & Log. Regression & 0.7905 & 0.4103 & 62 \\
+\hline
+COMPARE\_R & Random Forest & 0.7923 & 0.4000 & 6371 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{block}{Технические выводы}
+\begin{itemize}
+\item \textbf{Random Forest} побеждает в 4 из 6 конфигураций
+\item \textbf{eGeMAPS (88 признаков)} конкурирует с 6371 признаками
+\item \textbf{Лучший результат:} EMOBASE\_R + Random Forest (AUC 0.8062)
+\item \textbf{Для клиники:} eGeMAPS достаточно, важна интерпретируемость
+\end{itemize}
+\end{block}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Клинические рекомендации и выводы}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{Рекомендации по выбору теста}
+\begin{itemize}
+\item \textbf{MoCA/CDR оценка:} спонтанное описание
+\item \textbf{MMSE скрининг:} стандартизированное чтение
+\item \textbf{Полный скрининг:} двухуровневый протокол
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{Технические рекомендации}
+\begin{itemize}
+\item \textbf{Признаки:} eGeMAPS (88 параметров)
+\item \textbf{Модель:} Random Forest
+\item \textbf{Валидация:} LOO + статистические тесты
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\bigskip
+\begin{block}{Основные научные выводы}
+\begin{enumerate}
+\item Доказана эффективность речевого анализа (AUC до 0.81)
+\item Опровергнута гипотеза о преимуществе стандартизации
+\item Установлена специфичность речевых задач
+\item Предложен практический клинический протокол
+\end{enumerate}
+\end{block}
+
+\bigskip
+\begin{center}
+\color{darkcyan}
+\textbf{Речь — перспективный цифровой биомаркер для массового скрининга}
+\end{center}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Вопросы?}
+\begin{center}
+\Large
+Спасибо за внимание!
+
+\vspace{0.5cm}
+\begin{small}
+Уникальный датасет с клинической верификацией \\
+Прямое сравнение речевых модальностей \\
+Практические рекомендации для клиники
+\end{small}
+
+\vspace{1cm}
+\begin{tiny}
+Код и данные: \url{https://github.com/MrGorolom/my-first-scientific-article}
+\end{tiny}
+\end{center}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+
+\end{document}
